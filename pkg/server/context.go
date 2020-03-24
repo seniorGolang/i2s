@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 )
 
@@ -12,7 +13,7 @@ const (
 	spi                = "SourcePackageImport"
 )
 
-func prepareContext(info *GenerationInfo) context.Context {
+func prepareContext(info *meta.GenerationInfo) context.Context {
 
 	ctx := context.Background()
 

@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
+
+	"github.com/seniorGolang/i2s/pkg/meta"
 )
 
-func renderServerTracing(info *GenerationInfo) (err error) {
+func renderServerTracing(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy("server")
 

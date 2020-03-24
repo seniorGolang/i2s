@@ -8,11 +8,12 @@ import (
 	. "github.com/dave/jennifer/jen"
 	"github.com/vetcher/go-astra/types"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-func renderTransportHttpServer(info *GenerationInfo) (err error) {
+func renderTransportHttpServer(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy(info.PkgName)
 
@@ -37,7 +38,7 @@ func renderTransportHttpServer(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(info.OutputFilePath, "transport", strings.ToLower(info.ServiceName), "http.go"))
 }
 
-func decodeHTTPRequest(ctx context.Context, fn *types.Function, info *GenerationInfo) *Statement {
+func decodeHTTPRequest(ctx context.Context, fn *types.Function, info *meta.GenerationInfo) *Statement {
 
 	return Func().Id(utils.ToCamel(decodeRequestName(fn)+"Http")).
 		Params(

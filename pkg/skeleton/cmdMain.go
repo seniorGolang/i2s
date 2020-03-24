@@ -16,7 +16,6 @@ import (
 	. "github.com/dave/jennifer/jen"
 
 	"github.com/seniorGolang/i2s/pkg/logger"
-	"github.com/seniorGolang/i2s/pkg/server/pkgpath"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
@@ -253,5 +252,5 @@ func getProjectName(mainPath string) (projectName string, err error) {
 }
 
 func goModRepo(goModPath string) (repo string, err error) {
-	return pkgpath.GetPkgPath(goModPath, false)
+	return utils.GetPkgPath(goModPath, false)
 }

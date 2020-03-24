@@ -9,11 +9,12 @@ import (
 	. "github.com/dave/jennifer/jen"
 	"github.com/vetcher/go-astra/types"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-func renderTransportJsonRPC(info *GenerationInfo) (err error) {
+func renderTransportJsonRPC(info *meta.GenerationInfo) (err error) {
 
 	var requestDecoders []*types.Function
 	var responseDecoders []*types.Function
@@ -49,7 +50,7 @@ func renderTransportJsonRPC(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(info.OutputFilePath, "transport", strings.ToLower(info.ServiceName), "jsonRPC.go"))
 }
 
-func mapServerEndPoints(info *GenerationInfo) Code {
+func mapServerEndPoints(info *meta.GenerationInfo) Code {
 
 	return Line().Func().Id("EndpointsToMap").ParamsFunc(func(p *Group) { p.Id("endpoints").Id(endpointsSetName) }).
 		Params(Qual(packagePathPackageJsonRPC, "EndpointCodecMap")).

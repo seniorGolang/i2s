@@ -9,13 +9,14 @@ import (
 	. "github.com/dave/jennifer/jen"
 	"github.com/vetcher/go-astra/types"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
 var transportPackagePath string
 
-func renderServerApplication(info *GenerationInfo) (err error) {
+func renderServerApplication(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy("server")
 
@@ -36,7 +37,7 @@ func renderServerApplication(info *GenerationInfo) (err error) {
 	srcFile.ImportName(packagePathPackageUtils, "utils")
 	srcFile.ImportName(info.SourcePackageImport, serviceAlias)
 
-	for _, iface := range info.services {
+	for _, iface := range info.Services {
 		service := strings.ToLower(iface.Name)
 		transportPackagePath = path.Join(info.BasePackageImport, "transport", service)
 		srcFile.ImportName(transportPackagePath, service)
@@ -51,7 +52,7 @@ func renderServerApplication(info *GenerationInfo) (err error) {
 	srcFile.Line().Add(appServePPROF(info))
 	srcFile.Line().Add(appShutdown())
 
-	for _, iface := range info.services {
+	for _, iface := range info.Services {
 		srcFile.Line().Add(Endpoints(iface, info))
 	}
 
@@ -67,7 +68,7 @@ func appLog() (code *Statement) {
 	return Var().Id("log").Op("=").Qual(packagePathKitLog, "Log").Dot("WithField").Params(Lit("module"), Lit("server"))
 }
 
-func appConfigType(info *GenerationInfo) (code *Statement) {
+func appConfigType(info *meta.GenerationInfo) (code *Statement) {
 
 	return Type().Id("appConfig").InterfaceFunc(func(g *Group) {
 
@@ -88,11 +89,11 @@ func appConfigType(info *GenerationInfo) (code *Statement) {
 	})
 }
 
-func appType(info *GenerationInfo) (code *Statement) {
+func appType(info *meta.GenerationInfo) (code *Statement) {
 
 	return Type().Id("appServer").StructFunc(func(g *Group) {
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 
 			if !tags.ParseTags(iface.Docs).Contains("server") {
 				continue
@@ -112,13 +113,13 @@ func appType(info *GenerationInfo) (code *Statement) {
 	})
 }
 
-func appNew(info *GenerationInfo) (code *Statement) {
+func appNew(info *meta.GenerationInfo) (code *Statement) {
 
 	return Func().Id("New").ParamsFunc(func(g *Group) {
 
 		g.Id("config").Id("appConfig")
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 
 			if !tags.ParseTags(iface.Docs).Contains("server") {
 				continue
@@ -150,7 +151,7 @@ func appNew(info *GenerationInfo) (code *Statement) {
 		)
 		g.Line()
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 
 			if !tags.ParseTags(iface.Docs).Contains("server") {
 				continue
@@ -164,14 +165,14 @@ func appNew(info *GenerationInfo) (code *Statement) {
 	})
 }
 
-func appServeJsonRPC(info *GenerationInfo) (code *Statement) {
+func appServeJsonRPC(info *meta.GenerationInfo) (code *Statement) {
 
 	return Func().Params(Id("app").Op("*").Id("appServer")).Id("ServeJsonRPC").Params().Block(
 		Id("app").Op(".").Id("srvHttp").Op("=").Qual(packageKitServer, "StartFastHttpServer").Call(
 
 			Id("newJsonRpcHandler").CallFunc(func(g *Group) {
 
-				for _, iface := range info.services {
+				for _, iface := range info.Services {
 					service := utils.ToLowerCamel(iface.Name)
 					g.Id("app").Op(".").Id(service + "Endpoints")
 				}
@@ -181,7 +182,7 @@ func appServeJsonRPC(info *GenerationInfo) (code *Statement) {
 	)
 }
 
-func appServeMetrics(info *GenerationInfo) (code *Statement) {
+func appServeMetrics(info *meta.GenerationInfo) (code *Statement) {
 
 	return Func().Params(Id("app").Op("*").Id("appServer")).Id("ServeMetrics").Params().Block(
 		Id("app").Op(".").Id("srvMetrics").Op("=").Qual(packageKitServer, "StartFastHttpServer").Call(
@@ -191,7 +192,7 @@ func appServeMetrics(info *GenerationInfo) (code *Statement) {
 	)
 }
 
-func appServePPROF(info *GenerationInfo) (code *Statement) {
+func appServePPROF(info *meta.GenerationInfo) (code *Statement) {
 
 	return Func().Params(Id("app").Op("*").Id("appServer")).Id("ServePPROF").Params().Block(
 
@@ -235,7 +236,7 @@ func appShutdown() (code *Statement) {
 	})
 }
 
-func Endpoints(iface types.Interface, info *GenerationInfo) Code {
+func Endpoints(iface types.Interface, info *meta.GenerationInfo) Code {
 
 	service := utils.ToLowerCamel(iface.Name)
 	transportPackagePath = path.Join(info.BasePackageImport, "transport", strings.ToLower(iface.Name))

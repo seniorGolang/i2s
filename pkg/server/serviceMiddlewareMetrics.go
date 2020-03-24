@@ -8,12 +8,13 @@ import (
 	. "github.com/dave/jennifer/jen"
 	"github.com/vetcher/go-astra/types"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
 var serviceLoggingMiddlewareName = utils.ToCamel(serviceLoggingStructName)
 
-func renderServiceMiddlewareLogging(info *GenerationInfo) (err error) {
+func renderServiceMiddlewareLogging(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy(info.PkgName)
 
@@ -40,7 +41,7 @@ func renderServiceMiddlewareLogging(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(info.OutputFilePath, "transport", strings.ToLower(info.ServiceName), "metrics.go"))
 }
 
-func metricMiddlewareType(info *GenerationInfo) Code {
+func metricMiddlewareType(info *meta.GenerationInfo) Code {
 	return Type().Id(serviceMetricsStructName).Struct(
 		Id(_next_).Qual(info.SourcePackageImport, info.Iface.Name),
 		Id("requestCount").Qual(packagePathGoKitMetrics, "Counter"),
@@ -49,7 +50,7 @@ func metricMiddlewareType(info *GenerationInfo) Code {
 	)
 }
 
-func metricMiddleware(info *GenerationInfo) Code {
+func metricMiddleware(info *meta.GenerationInfo) Code {
 	return Func().Id(serviceMetricsMiddlewareName).Params(Id("next").Qual(info.SourcePackageImport, info.Iface.Name)).Params(Qual(info.SourcePackageImport, info.Iface.Name)).
 		BlockFunc(func(g *Group) {
 			g.Return(Op("&").Id(serviceMetricsStructName).Values(
@@ -63,11 +64,11 @@ func metricMiddleware(info *GenerationInfo) Code {
 		})
 }
 
-func metricFunc(ctx context.Context, signature *types.Function, info *GenerationInfo) *Statement {
+func metricFunc(ctx context.Context, signature *types.Function, info *meta.GenerationInfo) *Statement {
 	return methodDefinition(ctx, serviceMetricsStructName, signature).BlockFunc(metricFuncBody(signature, info))
 }
 
-func metricFuncBody(signature *types.Function, info *GenerationInfo) func(g *Group) {
+func metricFuncBody(signature *types.Function, info *meta.GenerationInfo) func(g *Group) {
 
 	return func(g *Group) {
 

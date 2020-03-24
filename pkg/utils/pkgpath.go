@@ -1,4 +1,4 @@
-package pkgpath
+package utils
 
 import (
 	"bytes"

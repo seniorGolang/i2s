@@ -6,9 +6,11 @@ import (
 	"path"
 
 	. "github.com/dave/jennifer/jen"
+
+	"github.com/seniorGolang/i2s/pkg/meta"
 )
 
-func renderServerMetrics(info *GenerationInfo) (err error) {
+func renderServerMetrics(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy("metrics")
 
@@ -40,7 +42,7 @@ func renderServerMetrics(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(filePath, "metrics.go"))
 }
 
-func prometheusCounterRequestCount(info *GenerationInfo) (code *Statement) {
+func prometheusCounterRequestCount(info *meta.GenerationInfo) (code *Statement) {
 
 	return Var().Id("RequestCount").Op("=").Qual(packageKitPrometheus, "NewCounterFrom").Call(Qual(packageStdPrometheus, "CounterOpts").Values(
 		DictFunc(func(d Dict) {
@@ -52,7 +54,7 @@ func prometheusCounterRequestCount(info *GenerationInfo) (code *Statement) {
 	), Index().String().Values(Lit("method"), Lit("service"), Lit("success")))
 }
 
-func prometheusCounterRequestCountAll(info *GenerationInfo) (code *Statement) {
+func prometheusCounterRequestCountAll(info *meta.GenerationInfo) (code *Statement) {
 
 	return Var().Id("RequestCountAll").Op("=").Qual(packageKitPrometheus, "NewCounterFrom").Call(Qual(packageStdPrometheus, "CounterOpts").Values(
 		DictFunc(func(d Dict) {
@@ -64,7 +66,7 @@ func prometheusCounterRequestCountAll(info *GenerationInfo) (code *Statement) {
 	), Index().String().Values(Lit("method"), Lit("service")))
 }
 
-func prometheusSummaryRequestCount(info *GenerationInfo) (code *Statement) {
+func prometheusSummaryRequestCount(info *meta.GenerationInfo) (code *Statement) {
 
 	return Var().Id("RequestLatency").Op("=").Qual(packageKitPrometheus, "NewSummaryFrom").Call(Qual(packageStdPrometheus, "SummaryOpts").Values(
 		DictFunc(func(d Dict) {
@@ -76,7 +78,7 @@ func prometheusSummaryRequestCount(info *GenerationInfo) (code *Statement) {
 	), Index().String().Values(Lit("method"), Lit("service"), Lit("success")))
 }
 
-func serverMetrics(info *GenerationInfo) *Statement {
+func serverMetrics(info *meta.GenerationInfo) *Statement {
 
 	s := &Statement{}
 

@@ -6,9 +6,11 @@ import (
 	"path"
 
 	. "github.com/dave/jennifer/jen"
+
+	"github.com/seniorGolang/i2s/pkg/meta"
 )
 
-func renderMetricsServe(info *GenerationInfo) (err error) {
+func renderMetricsServe(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy("server")
 

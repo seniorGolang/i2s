@@ -8,14 +8,14 @@ import (
 	. "github.com/dave/jennifer/jen"
 	"github.com/vetcher/go-astra/types"
 
-	"github.com/seniorGolang/i2s/pkg/server/tools"
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
 var pkgMetrics string
 
-func renderTransportServer(info *GenerationInfo) (err error) {
+func renderTransportServer(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy(info.PkgName)
 
@@ -43,7 +43,7 @@ func renderTransportServer(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(info.OutputFilePath, "transport", strings.ToLower(info.ServiceName), "server.go"))
 }
 
-func serverEndPoints(info *GenerationInfo) (code *Statement) {
+func serverEndPoints(info *meta.GenerationInfo) (code *Statement) {
 	ifaceTags := tags.ParseTags(info.Iface.Docs)
 
 	var statement = Id("svc")
@@ -65,7 +65,7 @@ func serverEndPoints(info *GenerationInfo) (code *Statement) {
 	).Id(endpointsSetName).Block(Return(statement))
 }
 
-func allEndpoints(info *GenerationInfo) *Statement {
+func allEndpoints(info *meta.GenerationInfo) *Statement {
 
 	s := &Statement{}
 	s.Func().Id("Endpoints").Call(Id("svc").Qual(info.SourcePackageImport, info.Iface.Name)).Id(endpointsSetName).BlockFunc(func(g *Group) {
@@ -78,7 +78,7 @@ func allEndpoints(info *GenerationInfo) *Statement {
 	return s
 }
 
-func createEndpoint(ctx context.Context, signature *types.Function, info *GenerationInfo) *Statement {
+func createEndpoint(ctx context.Context, signature *types.Function, info *meta.GenerationInfo) *Statement {
 
 	return Func().
 		Id(endpointsStructFieldName(signature.Name)).
@@ -131,7 +131,7 @@ func createEndpointBody(ctx context.Context, signature *types.Function) *Stateme
 			)
 		} else {
 			ret = append(ret,
-				Id(responseStructName(signature)).Values(tools.DictByNormalVariables(
+				Id(responseStructName(signature)).Values(utils.DictByNormalVariables(
 					removeErrorIfLast(signature.Results),
 					removeErrorIfLast(signature.Results),
 				)),

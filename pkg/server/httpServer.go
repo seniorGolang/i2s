@@ -7,11 +7,12 @@ import (
 
 	. "github.com/dave/jennifer/jen"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-func renderHttpServer(info *GenerationInfo) (err error) {
+func renderHttpServer(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy("server")
 
@@ -25,7 +26,7 @@ func renderHttpServer(info *GenerationInfo) (err error) {
 	srcFile.ImportName(packageOpentracing, "opentracing")
 	srcFile.ImportAlias(packagePathGoKitTransportHTTP, "kitHttp")
 
-	for _, iface := range info.services {
+	for _, iface := range info.Services {
 		service := strings.ToLower(iface.Name)
 		srcFile.ImportName(path.Join(info.BasePackageImport, "transport", service), service)
 	}
@@ -42,14 +43,14 @@ func renderHttpServer(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(filePath, "http.go"))
 }
 
-func appServeHttp(info *GenerationInfo) (code *Statement) {
+func appServeHttp(info *meta.GenerationInfo) (code *Statement) {
 
 	return Func().Params(Id("app").Op("*").Id("appServer")).Id("ServeHTTP").Params(Id("opts").Op("...").Qual(packagePathGoKitTransportHTTP, "ServerOption")).Block(
 		Id("app").Op(".").Id("srvHttp").Op("=").Qual(packageKitServer, "StartFastHttpServer").Call(
 
 			Id("httpServerHandler").CallFunc(func(g *Group) {
 
-				for _, iface := range info.services {
+				for _, iface := range info.Services {
 					service := utils.ToLowerCamel(iface.Name)
 					g.Id("app").Op(".").Id(service + "Endpoints")
 				}
@@ -61,11 +62,11 @@ func appServeHttp(info *GenerationInfo) (code *Statement) {
 	)
 }
 
-func httpServerHandler(info *GenerationInfo) Code {
+func httpServerHandler(info *meta.GenerationInfo) Code {
 
 	return Line().Func().Id("httpServerHandler").ParamsFunc(func(p *Group) {
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 			service := utils.ToLowerCamel(iface.Name)
 			p.Id(service+"Endpoints").Qual(path.Join(info.BasePackageImport, "transport", strings.ToLower(service)), endpointsSetName)
 		}
@@ -150,7 +151,7 @@ func httpServerHandler(info *GenerationInfo) Code {
 
 			group.Line().Return(Id("newHTTPHandler").CallFunc(func(g *Group) {
 
-				for _, iface := range info.services {
+				for _, iface := range info.Services {
 					service := utils.ToLowerCamel(iface.Name)
 					g.Id(service + "Endpoints")
 				}
@@ -159,11 +160,11 @@ func httpServerHandler(info *GenerationInfo) Code {
 		})
 }
 
-func httpServer(info *GenerationInfo) *Statement {
+func httpServer(info *meta.GenerationInfo) *Statement {
 
 	return Func().Id("newHTTPHandler").ParamsFunc(func(p *Group) {
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 			service := utils.ToLowerCamel(iface.Name)
 			p.Id(service+"Endpoints").Qual(path.Join(info.BasePackageImport, "transport", strings.ToLower(service)), endpointsSetName)
 		}
@@ -175,7 +176,7 @@ func httpServer(info *GenerationInfo) *Statement {
 
 		g.Line().Id("mux").Op(":=").Qual(packageGorillaMux, "NewRouter").Call()
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 
 			service := utils.ToLowerCamel(iface.Name)
 			serviceTags := tags.ParseTags(iface.Docs)

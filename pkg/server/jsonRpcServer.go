@@ -9,10 +9,11 @@ import (
 
 	. "github.com/dave/jennifer/jen"
 
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-func renderServerJsonRPC(info *GenerationInfo) (err error) {
+func renderServerJsonRPC(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy("server")
 
@@ -27,7 +28,7 @@ func renderServerJsonRPC(info *GenerationInfo) (err error) {
 	srcFile.ImportName(packagePathPackageJsonRPC, "jsonrpc")
 	srcFile.ImportName(packageKitServer, "server")
 
-	for _, iface := range info.services {
+	for _, iface := range info.Services {
 		service := utils.ToLowerCamel(iface.Name)
 		transportPackagePath = path.Join(info.OutputPackageImport, service)
 		srcFile.ImportName(transportPackagePath, service)
@@ -48,11 +49,11 @@ func renderServerJsonRPC(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(filePath, "jsonRPC.go"))
 }
 
-func jsonRpcHandler(info *GenerationInfo) Code {
+func jsonRpcHandler(info *meta.GenerationInfo) Code {
 
 	return Func().Id("newJsonRpcHandler").ParamsFunc(func(g *Group) {
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 
 			service := utils.ToLowerCamel(iface.Name)
 
@@ -68,7 +69,7 @@ func jsonRpcHandler(info *GenerationInfo) Code {
 		g.Id("mux").Op(":=").Qual(packageGorillaMux, "NewRouter").Call()
 		g.Line()
 
-		for _, iface := range info.services {
+		for _, iface := range info.Services {
 
 			service := utils.ToLowerCamel(iface.Name)
 
@@ -87,7 +88,7 @@ func jsonRpcHandler(info *GenerationInfo) Code {
 	})
 }
 
-func jsonRpcServerHandler(info *GenerationInfo) Code {
+func jsonRpcServerHandler(info *meta.GenerationInfo) Code {
 
 	return Line().Func().Id("jsonRpcServerHandler").ParamsFunc(func(p *Group) {
 		p.Id("endpointMap").Qual(packagePathPackageJsonRPC, "EndpointCodecMap")

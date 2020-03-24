@@ -1,4 +1,4 @@
-package server
+package meta
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/vetcher/go-astra/types"
 
-	"github.com/seniorGolang/i2s/pkg/server/pkgpath"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
@@ -26,7 +25,8 @@ type GenerationInfo struct {
 
 	Iface *types.Interface
 
-	services []types.Interface
+	Backend  string
+	Services []types.Interface
 }
 
 func (i GenerationInfo) String() string {
@@ -58,7 +58,7 @@ func listKeysOfMap(m map[string]bool) string {
 	return strings.Join(keys, ", ")
 }
 
-func fillInfo(iface *types.Interface, sourcePath, outPath string) (info *GenerationInfo, err error) {
+func FillInfo(iface *types.Interface, sourcePath, outPath string) (info *GenerationInfo, err error) {
 
 	var absOutPath string
 	if absOutPath, err = filepath.Abs(outPath); err != nil {
@@ -67,7 +67,7 @@ func fillInfo(iface *types.Interface, sourcePath, outPath string) (info *Generat
 
 	var importPackagePath string
 
-	if importPackagePath, err = pkgpath.GetPkgPath(".", true); err != nil {
+	if importPackagePath, err = utils.GetPkgPath(".", true); err != nil {
 		return
 	}
 

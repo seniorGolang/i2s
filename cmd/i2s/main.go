@@ -13,6 +13,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/seniorGolang/i2s/pkg/client"
 	"github.com/seniorGolang/i2s/pkg/logger"
 	"github.com/seniorGolang/i2s/pkg/node"
 	"github.com/seniorGolang/i2s/pkg/server"
@@ -73,6 +74,26 @@ func main() {
 			},
 
 			UsageText:   "i2s transport",
+			Description: "generate services transport layer by interfaces",
+		},
+		{
+			Name:   "client",
+			Usage:  "generate services clients by interfaces in 'service' package",
+			Action: cmdClient,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "services",
+					Value: "./pkg/someService/service",
+					Usage: "path to services package",
+				},
+				cli.StringFlag{
+					Name:  "outPath",
+					Value: "./pkg/clients",
+					Usage: "path to output clients",
+				},
+			},
+
+			UsageText:   "i2s client --services ./pkg/someService/service",
 			Description: "generate services transport layer by interfaces",
 		},
 		{
@@ -142,8 +163,7 @@ func cmdTransport(c *cli.Context) (err error) {
 		}
 	}()
 
-	outPath := c.String("services")
-	outPath, _ = path.Split(outPath + ".l")
+	outPath, _ := path.Split(c.String("services"))
 
 	if c.String("out") != "" {
 		outPath = c.String("out")
@@ -160,6 +180,16 @@ func cmdTransport(c *cli.Context) (err error) {
 		}
 	}
 	return
+}
+
+func cmdClient(c *cli.Context) (err error) {
+
+	defer func() {
+		if err == nil {
+			log.Info("done")
+		}
+	}()
+	return client.MakeServices(c.String("services"), c.String("outPath"))
 }
 
 func cmdSwagger(c *cli.Context) (err error) {

@@ -9,14 +9,14 @@ import (
 	. "github.com/dave/jennifer/jen"
 	"github.com/vetcher/go-astra/types"
 
-	"github.com/seniorGolang/i2s/pkg/server/tools"
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
 var serviceMetricsMiddlewareName = utils.ToCamel(serviceMetricsStructName)
 
-func renderServiceMiddlewareMetrics(info *GenerationInfo) (err error) {
+func renderServiceMiddlewareMetrics(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy(info.PkgName)
 
@@ -55,11 +55,11 @@ func loggingLog() (code *Statement) {
 	return Var().Id("log").Op("=").Qual(packagePathKitLog, "Log").Dot("WithField").Params(Lit("module"), Lit("server"))
 }
 
-func loggingFunc(ctx context.Context, signature *types.Function, info *GenerationInfo) *Statement {
+func loggingFunc(ctx context.Context, signature *types.Function, info *meta.GenerationInfo) *Statement {
 	return methodDefinition(ctx, serviceLoggingStructName, signature).BlockFunc(loggingFuncBody(signature, info))
 }
 
-func loggingFuncBody(signature *types.Function, info *GenerationInfo) func(g *Group) {
+func loggingFuncBody(signature *types.Function, info *meta.GenerationInfo) func(g *Group) {
 
 	return func(g *Group) {
 
@@ -79,7 +79,7 @@ func loggingFuncBody(signature *types.Function, info *GenerationInfo) func(g *Gr
 				if len(params) == 1 {
 					d[Lit("request")] = Id(params[0].Name)
 				} else if len(params) > 1 {
-					d[Lit("request")] = Id(requestStructName(signature)).Values(tools.DictByNormalVariables(params, params))
+					d[Lit("request")] = Id(requestStructName(signature)).Values(utils.DictByNormalVariables(params, params))
 				}
 
 				printResult := true
@@ -96,7 +96,7 @@ func loggingFuncBody(signature *types.Function, info *GenerationInfo) func(g *Gr
 					if len(returns) == 1 {
 						d[Lit("response")] = Id(returns[0].Name)
 					} else if len(returns) > 1 {
-						d[Lit("response")] = Id(responseStructName(signature)).Values(tools.DictByNormalVariables(returns, returns))
+						d[Lit("response")] = Id(responseStructName(signature)).Values(utils.DictByNormalVariables(returns, returns))
 					}
 				}
 
@@ -142,7 +142,7 @@ func calcParamAmount(name string, params []types.Variable) int {
 	return paramAmount
 }
 
-func loggingEntity(ctx context.Context, name string, fn *types.Function, params []types.Variable, info *GenerationInfo) Code {
+func loggingEntity(ctx context.Context, name string, fn *types.Function, params []types.Variable, info *meta.GenerationInfo) Code {
 	if len(params) == 0 {
 		return Empty()
 	}
@@ -157,7 +157,7 @@ func loggingEntity(ctx context.Context, name string, fn *types.Function, params 
 	})
 }
 
-func newLoggingBody(info *GenerationInfo) *Statement {
+func newLoggingBody(info *meta.GenerationInfo) *Statement {
 
 	return Return(Op("&").Id(serviceLoggingStructName).Values(
 		Dict{

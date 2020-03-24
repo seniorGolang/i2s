@@ -10,13 +10,12 @@ import (
 	"github.com/vetcher/go-astra/types"
 
 	"github.com/seniorGolang/i2s/pkg/logger"
+	"github.com/seniorGolang/i2s/pkg/meta"
 	"github.com/seniorGolang/i2s/pkg/tags"
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-var (
-	log = logger.Log.WithField("module", "server")
-)
+var log = logger.Log.WithField("module", "server")
 
 func MakeServices(serviceDirectory, outPath string) (err error) {
 
@@ -77,15 +76,15 @@ func MakeService(srcPath, outPath string, services []types.Interface) (err error
 			continue
 		}
 
-		var info *GenerationInfo
+		var info *meta.GenerationInfo
 
-		if info, err = fillInfo(&iface, srcPath, outPath); err != nil {
+		if info, err = meta.FillInfo(&iface, srcPath, outPath); err != nil {
 			return
 		}
 
-		info.services = services
+		info.Services = services
 
-		toGenerate := make(map[string]func(*GenerationInfo) error)
+		toGenerate := make(map[string]func(*meta.GenerationInfo) error)
 
 		ifaceTags := tags.ParseTags(iface.Docs)
 

@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
+
+	"github.com/seniorGolang/i2s/pkg/meta"
 )
 
-func renderServiceTracing(info *GenerationInfo) (err error) {
+func renderServiceTracing(info *meta.GenerationInfo) (err error) {
 
 	srcFile := NewFileProxy(info.PkgName)
 
@@ -31,7 +33,7 @@ func renderServiceTracing(info *GenerationInfo) (err error) {
 	return srcFile.Save(path.Join(info.OutputFilePath, "transport", strings.ToLower(info.ServiceName), "tracing.go"))
 }
 
-func clientTracingMiddleware(info *GenerationInfo) *Statement {
+func clientTracingMiddleware(info *meta.GenerationInfo) *Statement {
 
 	s := &Statement{}
 	s.Func().Id("InstrumentingEndpoints").Call(
