@@ -17,6 +17,7 @@ import (
 	"github.com/seniorGolang/i2s/pkg/logger"
 	"github.com/seniorGolang/i2s/pkg/node"
 	"github.com/seniorGolang/i2s/pkg/server"
+	"github.com/seniorGolang/i2s/pkg/skeleton"
 	"github.com/seniorGolang/i2s/pkg/swagger"
 )
 
@@ -41,6 +42,32 @@ func main() {
 	app.EnableBashCompletion = true
 
 	app.Commands = []cli.Command{
+		{
+			Name:   "init",
+			Usage:  "init project",
+			Action: cmdInit,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "repo",
+					Usage: "base repository",
+				},
+				cli.BoolFlag{
+					Name:  "jaeger",
+					Usage: "use Jaeger tracer",
+				},
+				cli.BoolFlag{
+					Name:  "zipkin",
+					Usage: "use Zipkin tracer",
+				},
+				cli.BoolFlag{
+					Name:  "mongo",
+					Usage: "enable mongo support",
+				},
+			},
+			ArgsUsage:   "[project name]",
+			UsageText:   "i2s init someProject",
+			Description: "init directory structures, basic configuration package",
+		},
 		{
 			Name:   "transport",
 			Usage:  "generate services transport layer by interfaces in 'service' package",
@@ -153,6 +180,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func cmdInit(c *cli.Context) (err error) {
+
+	defer func() {
+		if err == nil {
+			log.Info("done")
+		}
+	}()
+
+	return skeleton.GenerateSkeleton(
+		c.Args().First(),
+		c.String("repo"),
+		".",
+		c.Bool("jaeger"),
+		c.Bool("zipkin"),
+		c.Bool("mongo"),
+	)
 }
 
 func cmdTransport(c *cli.Context) (err error) {

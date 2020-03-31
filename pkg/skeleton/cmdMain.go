@@ -56,7 +56,7 @@ func makeCmdMain(meta metaInfo, pkgBase, mainPath string) (err error) {
 
 	log.Infof("make %s", path.Join(mainPath, "main.go"))
 
-	serviceDirectory := path.Join(meta.baseDir, "pkg", "service")
+	serviceDirectory := path.Join(meta.baseDir, "pkg", meta.projectName, "service")
 
 	var files []os.FileInfo
 	if files, err = ioutil.ReadDir(serviceDirectory); err != nil {
@@ -93,19 +93,19 @@ func renderMain(meta metaInfo, basePkg, mainPath string, services []types.Interf
 
 	srcFile := NewFile("main")
 
-	srcFile.ImportName(pkgLog, "log")
+	srcFile.ImportName(pkgLog, "logger")
 	srcFile.ImportName(pkgUtils, "utils")
 	srcFile.ImportName(pkgMongo, "mongo")
 	srcFile.ImportName(pkgSignal, "signal")
 	srcFile.ImportName(pkgSyscall, "syscall")
-	srcFile.ImportName(path.Join(basePkg, "pkg", "config"), "config")
-	srcFile.ImportName(path.Join(basePkg, "pkg", "service"), "service")
-	srcFile.ImportName(path.Join(basePkg, "pkg", "transport", "server"), "server")
+	srcFile.ImportName(path.Join(basePkg, "pkg", meta.projectName, "config"), "config")
+	srcFile.ImportName(path.Join(basePkg, "pkg", meta.projectName, "service"), "service")
+	srcFile.ImportName(path.Join(basePkg, "pkg", meta.projectName, "transport", "server"), "server")
 
 	srcFile.Add(renderMainVars())
 	srcFile.Line()
 	srcFile.Add(renderMainConst(meta))
-	srcFile.Line()
+	srcFile.Line().Var().Id("log").Op("=").Qual(pkgLog, "Log").Dot("WithField").Call(Lit("module"), Id("serviceName")).Line()
 	srcFile.Add(renderMainFunc(meta, basePkg, services))
 
 	return srcFile.Save(path.Join(mainPath, "main.go"))
@@ -117,7 +117,7 @@ func renderMainFunc(meta metaInfo, basePkg string, services []types.Interface) C
 
 		g.Line()
 
-		pkgConfig := path.Join(basePkg, "pkg", "config")
+		pkgConfig := path.Join(basePkg, "pkg", meta.projectName, "config")
 
 		g.Qual(pkgConfig, "SetBuildInfo").Call(Id("serviceName"), Id("GitSHA"), Id("Version"), Id("BuildStamp"), Id("BuildNumber"))
 
@@ -128,11 +128,7 @@ func renderMainFunc(meta metaInfo, basePkg string, services []types.Interface) C
 
 		g.Line()
 
-		g.Defer().Qual(pkgLog, "Info").Call(Lit("msg"), Lit("goodbye"))
-
-		g.Line()
-
-		g.Qual(pkgUtils, "ExitOnError").Call(Id("log"), Err(), Lit("NATS server start"))
+		g.Defer().Id("log").Dot("Info").Call(Lit("msg"), Lit("goodbye"))
 
 		g.Line()
 
@@ -143,7 +139,7 @@ func renderMainFunc(meta metaInfo, basePkg string, services []types.Interface) C
 
 		g.Line()
 
-		pkgService := path.Join(basePkg, "pkg", "service")
+		pkgService := path.Join(basePkg, "pkg", meta.projectName, "service")
 
 		appArgs := []Code{Qual(pkgConfig, "App").Call()}
 
@@ -157,12 +153,14 @@ func renderMainFunc(meta metaInfo, basePkg string, services []types.Interface) C
 
 		g.Line()
 
-		pkgServer := path.Join(basePkg, "pkg", "transport", "server")
+		pkgServer := path.Join(basePkg, "pkg", meta.projectName, "transport", "server")
 
 		if meta.tracer == TracerJaeger {
 			g.Id("app").Op(":=").Qual(pkgServer, "New").Call(appArgs...).Dot("WithJaeger").Call()
-		} else {
+		} else if meta.tracer == TracerZipkin {
 			g.Id("app").Op(":=").Qual(pkgServer, "New").Call(appArgs...).Dot("WithZipkin").Call(Qual(pkgConfig, "Values").Call().Dot("Zipkin"))
+		} else {
+			g.Id("app").Op(":=").Qual(pkgServer, "New").Call(appArgs...)
 		}
 
 		g.Line()
@@ -191,17 +189,13 @@ func renderMainFunc(meta metaInfo, basePkg string, services []types.Interface) C
 		g.Id("app").Dot("ServePPROF").Call()
 		g.Id("app").Dot("ServeMetrics").Call()
 
-		if _, found := serve["test"]; found {
-			g.Id("app").Dot("NewTests").Call(appArgs[2:]...).Dot("ServeTests").Call()
-		}
-
 		g.Line()
 
 		g.Op("<-").Id("shutdown")
 
 		g.Line()
 
-		g.Qual(pkgLog, "Info").Call(Lit("msg"), Lit("shutdown application"))
+		g.Id("log").Dot("Info").Call(Lit("shutdown application"))
 		g.Id("app").Dot("Shutdown").Call()
 	})
 }

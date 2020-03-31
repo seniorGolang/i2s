@@ -19,7 +19,7 @@ var log = logger.Log.WithField("module", "server")
 
 func MakeServices(serviceDirectory, outPath string) (err error) {
 
-	log.Info("generate services transport")
+	log.WithField("dir", serviceDirectory).Info("generate services transport")
 
 	var files []os.FileInfo
 	if files, err = ioutil.ReadDir(serviceDirectory); err != nil {

@@ -1,7 +1,8 @@
 package skeleton
 
 const (
-	TracerZipkin = iota
+	TracerNone = iota
+	TracerZipkin
 	TracerJaeger
 )
 

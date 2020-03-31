@@ -16,7 +16,7 @@ func genConfig(meta metaInfo) (err error) {
 
 	log.Info("generate config")
 
-	configPath := path.Join(meta.baseDir, "pkg", "config")
+	configPath := path.Join(meta.baseDir, "pkg", meta.projectName, "config")
 
 	if err = os.MkdirAll(configPath, os.ModePerm); err != nil {
 		return
@@ -38,9 +38,11 @@ func renderConfig(meta metaInfo, configPath string) (err error) {
 
 	srcFile.ImportName(pkgOS, "os")
 	srcFile.ImportName(pkgENV, "env")
-	srcFile.ImportName(pkgLog, "log")
+	srcFile.ImportName(pkgLog, "logger")
 	srcFile.ImportName(pkgUtils, "utils")
 	srcFile.ImportName(pkgReflect, "reflect")
+
+	srcFile.Line().Var().Id("log").Op("=").Qual(pkgLog, "Log").Dot("WithField").Call(Lit("module"), Lit("config")).Line()
 
 	srcFile.Add(renderConfigStruct(meta))
 	srcFile.Add(renderBuildInfo())
@@ -63,7 +65,8 @@ func renderPrintConfig() Code {
 			Line(),
 			If(Id("envKey").Op("!=").Lit("")).Block(
 				List(Id("_"), Id("found")).Op(":=").Qual(pkgOS, "LookupEnv").Call(Id("envKey")),
-				Qual(pkgLog, "Info").Call(Id("envKey"), Id("field").Dot("Interface").Call(), Lit("default"), Op("!").Id("found")),
+				// log.WithField(envKey, field.Interface()).WithField("default", !found).Info()
+				Id("log").Dot("WithField").Call(Id("envKey"), Id("field").Dot("Interface").Call()).Dot("WithField").Call(Lit("default"), Op("!").Id("found")).Dot("Info").Call(),
 			),
 		),
 	)
@@ -83,10 +86,10 @@ func renderBuildInfo() Code {
 
 		g.Line()
 
-		g.Qual(pkgLog, "SetLevel").Call(Id("Values").Call().Dot("LogLevel"))
-		g.Qual(pkgLog, "SetServiceName").Call(Id("serviceName"))
+		g.Id("printConfig").Call()
 
 		g.Line()
+
 		g.List(Id("nodeName"), Id("_")).Op(":=").Qual(pkgOS, "Hostname").Call()
 		g.Line()
 
@@ -98,13 +101,12 @@ func renderBuildInfo() Code {
 
 		g.Line()
 
-		g.Qual(pkgLog, "Info").CallFunc(func(c *Group) {
-			for _, field := range fields {
-				c.Lit(field)
-				c.Id(utils.ToCamel(field)).Call()
-			}
-		})
-		g.Id("printConfig").Call()
+		var buildInfo = g.Id("log")
+		for _, field := range fields {
+			buildInfo.Dot("WithField").Call(Lit(field), Id(utils.ToCamel(field)).Call())
+		}
+
+		buildInfo.Dot("Info").Call()
 	})
 }
 
@@ -126,7 +128,7 @@ func renderInternalMethods() (code *Statement) {
 		Line().If(Id("configuration").Op("==").Nil()).Block(
 			Id("configuration").Op("=").Op("&").Id("config").Op("{}"),
 			Line().If(Err().Op(":=").Qual(pkgENV, "Parse").Call(Id("configuration")).Op(";").Err().Op("!=").Nil()).Block(
-				Qual(pkgUtils, "ExitOnError").Call(Err(), Lit("read configuration error")),
+				Qual(pkgUtils, "ExitOnError").Call(Id("log"), Err(), Lit("read configuration error")),
 			),
 		),
 		Return(Id("configuration")),
