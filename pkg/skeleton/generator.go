@@ -25,6 +25,12 @@ func GenerateSkeleton(projectName, repoName, baseDir string, jaeger, zipkin, mon
 
 	log.Info("init go.mod")
 
+	packageName := meta.repoName
+
+	if packageName == "" {
+		packageName = path.Join(meta.repoName, meta.projectName)
+	}
+
 	if err = exec.Command("go", "mod", "init", path.Join(meta.repoName, meta.projectName)).Run(); err != nil {
 		return
 	}
