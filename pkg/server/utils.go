@@ -239,5 +239,5 @@ func (fw *FileProxy) Save(path string) (err error) {
 		return
 	}
 
-	return utils.Goimports(path)
+	return utils.GoImports(path)
 }

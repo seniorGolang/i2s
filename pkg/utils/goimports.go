@@ -2,7 +2,7 @@ package utils
 
 import "os/exec"
 
-func Goimports(path string) (err error) {
+func GoImports(path string) (err error) {
 
 	var execPath string
 

@@ -99,6 +99,9 @@ func MakeService(srcPath, outPath string, services []types.Interface) (err error
 					toGenerate["renderTransportExchange"] = renderTransportExchange
 				}
 
+			case "test":
+				toGenerate["renderServiceTests"] = renderServiceTests
+
 			case "trace":
 				toGenerate["renderServiceTracing"] = renderServiceTracing
 				toGenerate["renderTransportEndpoints"] = renderTransportEndpoints

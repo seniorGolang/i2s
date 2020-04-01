@@ -8,6 +8,7 @@ const (
 	_service_                     = "svc"
 	packageOS                     = "os"
 	packageIO                     = "io"
+	packageTesting                = "testing"
 	endpointsFunc                 = "Endpoints"
 	serviceMetricsStructName      = "metricsMiddleware"
 	serviceLoggingStructName      = "loggingMiddleware"
