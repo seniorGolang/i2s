@@ -13,8 +13,6 @@ import (
 
 func renderServiceTests(info *meta.GenerationInfo) (err error) {
 
-	log.Warn(info.OutputFilePath)
-
 	srcFile := NewFileProxy(info.PkgName)
 
 	ctx := prepareContext(info)
