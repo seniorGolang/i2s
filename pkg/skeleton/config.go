@@ -169,13 +169,13 @@ func renderConfigStruct(meta metaInfo) Code {
 		g.Id("MetricsBind").String().Tag(map[string]string{"env": "BIND_METRICS", "envDefault": ":9090"})
 		g.Id("EnablePPROF").Bool().Tag(map[string]string{"env": "ENABLE_PPROF", "envDefault": "false"})
 		if meta.tracer == TracerZipkin {
-			g.Id("Zipkin").String().Tag(map[string]string{"env": "ZIPKIN_ADDR", "envDefault": "https://zipkin.scnetservices.ru/api/v2/spans"})
+			g.Id("Zipkin").String().Tag(map[string]string{"env": "ZIPKIN_ADDR", "envDefault": "https://zipkin.local/api/v2/spans"})
 		}
 
 		g.Line().Comment(meta.projectName + " variables")
 
 		if meta.withMongo {
-			g.Id("MongoAddr").String().Tag(map[string]string{"env": "MONGO_ADDR", "envDefault": fmt.Sprintf("mongodb://mongo.default.svc.cluster.local/%s", meta.projectName)})
+			g.Id("MongoAddr").String().Tag(map[string]string{"env": "MONGO_ADDR", "envDefault": fmt.Sprintf("mongodb://mongo.local/%s", meta.projectName)})
 		}
 	})
 }
