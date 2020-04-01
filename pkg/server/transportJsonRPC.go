@@ -137,9 +137,7 @@ func decodeRequest(ctx context.Context, fn *types.Function) Code {
 
 		group.Line().Var().Id(shortName).Id(requestStructName(fn))
 
-		group.If(Err().Op("=").Qual(packagePathJson, "Unmarshal").Call(Id(fullName), Op("&").Id(shortName)).Op(";").Err().Op("!=").Nil()).Block(
-			Return(),
-		)
+		group.Op("_").Op("=").Qual(packagePathJson, "Unmarshal").Call(Id(fullName), Op("&").Id(shortName))
 
 		if len(headerArgs) > 0 {
 			group.Line()
