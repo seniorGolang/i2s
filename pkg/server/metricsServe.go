@@ -63,7 +63,7 @@ func accessControlFunc() (code *Statement) {
 					d[Id("AllowCredentials")] = True()
 					d[Id("AllowedOrigins")] = Op("[]").Id("string").Values(Lit("*"))
 					d[Id("AllowedHeaders")] = Op("[]").Id("string").Values(Lit("*"))
-					d[Id("AllowedMethods")] = Op("[]").Id("string").Values(Lit("GET"), Lit("POST"))
+					d[Id("AllowedMethods")] = Op("[]").Id("string").Values(Lit("GET"), Lit("POST"), Lit("PUT"), Lit("PATCH"), Lit("DELETE"), Lit("OPTIONS"), Lit("HEAD"))
 				}))
 			}))
 			g.Return(Id("rules").Op(".").Id("Handler").Call(Id("next")))

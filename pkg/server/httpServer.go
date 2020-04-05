@@ -237,6 +237,6 @@ func httpServer(info *meta.GenerationInfo) *Statement {
 				}
 			}
 		}
-		g.Return(Id("mux"))
+		g.Return(Id("accessControl").Call(Id("mux")))
 	})
 }
