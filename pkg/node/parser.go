@@ -12,7 +12,7 @@ import (
 	"github.com/seniorGolang/i2s/pkg/tags"
 )
 
-func Parse(servicesPath string, ifaceNames ...string) (node Node, err error) {
+func (p *NodeParser) Parse(servicesPath string, ifaceNames ...string) (node Node, err error) {
 
 	var files []os.FileInfo
 	if files, err = ioutil.ReadDir(servicesPath); err != nil {
@@ -25,23 +25,20 @@ func Parse(servicesPath string, ifaceNames ...string) (node Node, err error) {
 			continue
 		}
 
-		var services []Service
-		var fileTags tags.DocTags
-
-		if services, fileTags, err = ParseGoFile(servicesPath, file.Name(), ifaceNames...); err != nil {
+		if err = p.ParseGoFile(servicesPath, file.Name(), ifaceNames...); err != nil {
 			return
 		}
 
-		node.Tags = node.Tags.Merge(fileTags)
-		node.Services = append(node.Services, services...)
+		node.Tags = node.Tags.Merge(p.fileTags)
+		node.Services = append(node.Services, p.services...)
 	}
 
 	node.Name = node.Tags.Value("backend")
-	node.Events, _ = ParseEvents(path.Join(servicesPath, "events"))
+	node.Events, _ = p.ParseEvents(path.Join(servicesPath, "events"))
 	return
 }
 
-func ParseService(servicesPath string, ifaceNames ...string) (service []Service, events []Event, serviceTags tags.DocTags, err error) {
+func (p *NodeParser) ParseService(servicesPath string, ifaceNames ...string) (service []Service, events []Event, serviceTags tags.DocTags, err error) {
 
 	var files []os.FileInfo
 	if files, err = ioutil.ReadDir(servicesPath); err != nil {
@@ -59,7 +56,7 @@ func ParseService(servicesPath string, ifaceNames ...string) (service []Service,
 		var services []Service
 		var fileTags tags.DocTags
 
-		if services, fileTags, err = ParseGoFile(servicesPath, file.Name(), ifaceNames...); err != nil {
+		if err = p.ParseGoFile(servicesPath, file.Name(), ifaceNames...); err != nil {
 			return
 		}
 
@@ -67,34 +64,34 @@ func ParseService(servicesPath string, ifaceNames ...string) (service []Service,
 		serviceTags = serviceTags.Merge(fileTags)
 	}
 
-	events, _ = ParseEvents(path.Join(servicesPath, "events"))
+	events, _ = p.ParseEvents(path.Join(servicesPath, "events"))
 	return
 }
 
-func ParseGoFile(servicesPath, fileName string, ifaceNames ...string) (services []Service, fileTags tags.DocTags, err error) {
+func (p *NodeParser) ParseGoFile(servicesPath, fileName string, ifaceNames ...string) (err error) {
 
 	var goFile *types.File
 	if goFile, err = astra.ParseFile(path.Join(servicesPath, fileName)); err != nil {
 		return
 	}
 
-	fileTags = tags.ParseTags(goFile.Docs)
+	p.fileTags = tags.ParseTags(goFile.Docs)
 
 	for _, iface := range goFile.Interfaces {
 
 		if len(ifaceNames) == 0 || in(iface.Name, ifaceNames) {
 
 			var svc Service
-			if svc, err = parseIface(servicesPath, iface); err != nil {
+			if svc, err = p.parseIface(servicesPath, iface); err != nil {
 				return
 			}
-			services = append(services, svc)
+			p.services = append(p.services, svc)
 		}
 	}
 	return
 }
 
-func parseIface(pkgPath string, iface types.Interface) (svc Service, err error) {
+func (p *NodeParser) parseIface(pkgPath string, iface types.Interface) (svc Service, err error) {
 
 	svc.Name = iface.Name
 	svc.Tags = tags.ParseTags(iface.Docs)
@@ -104,7 +101,7 @@ func parseIface(pkgPath string, iface types.Interface) (svc Service, err error) 
 		log.Infof("method %s", ifaceMethod.Name)
 
 		var m Method
-		if m, err = parseMethod(pkgPath, ifaceMethod); err != nil {
+		if m, err = p.parseMethod(pkgPath, ifaceMethod); err != nil {
 			return
 		}
 		svc.Methods = append(svc.Methods, m)
@@ -112,17 +109,17 @@ func parseIface(pkgPath string, iface types.Interface) (svc Service, err error) 
 	return
 }
 
-func parseMethod(pkgPath string, method *types.Function) (m Method, err error) {
+func (p *NodeParser) parseMethod(pkgPath string, method *types.Function) (m Method, err error) {
 
 	m.Name = method.Name
 	m.Tags = tags.ParseTags(method.Docs)
 
-	vars := func(vars []types.Variable) (objList []Object, err error) {
+	vars := func(vars []types.Variable) (objList []*Object, err error) {
 
 		for _, v := range vars {
 
-			var obj Object
-			if obj, err = parseObject(pkgPath, v); err != nil {
+			var obj *Object
+			if obj, err = p.parseObject(pkgPath, v); err != nil {
 				return
 			}
 			objList = append(objList, obj)

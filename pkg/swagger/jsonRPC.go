@@ -9,7 +9,7 @@ import (
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-func buildJsonRPC(node node.Node, swagger *Swagger) {
+func (b *Builder) buildJsonRPC(node node.Node, swagger *Swagger) {
 
 	for _, service := range node.Services {
 
@@ -17,7 +17,7 @@ func buildJsonRPC(node node.Node, swagger *Swagger) {
 
 			log.Infof("generate swagger by service %s (jsonRPC transport layer)", service.Name)
 
-			addErrorJsonRPC(swagger)
+			b.addErrorJsonRPC(swagger)
 
 			for _, method := range service.Methods {
 
@@ -27,8 +27,8 @@ func buildJsonRPC(node node.Node, swagger *Swagger) {
 					Tags:        []string{utils.ToLowerCamel(service.Name)},
 				}
 
-				moveArgumentsToParameters(&method, op)
-				addComponent(service.Name, method, swagger, formatJsonRPC)
+				b.moveArgumentsToParameters(&method, op, swagger)
+				b.addRequestResponse(service.Name, method, swagger, formatJsonRPC)
 
 				httpPath := fmt.Sprintf("/%s/%s", utils.ToLowerCamel(service.Name), utils.ToLowerCamel(method.Name))
 				httpReqContentTypes := strings.Split(method.Tags.Value("http-request-content-type", "application/json"), "|")
@@ -90,23 +90,24 @@ func buildJsonRPC(node node.Node, swagger *Swagger) {
 	}
 }
 
-func addErrorJsonRPC(swagger *Swagger) {
+func (b *Builder) addErrorJsonRPC(swagger *Swagger) {
 
 	if swagger.Components.Schemas == nil {
 		swagger.Components.Schemas = make(map[string]schema)
 	}
 
-	swagger.Components.Schemas["errorJsonRPC"] = makeComponent(node.Object{
+	swagger.Components.Schemas["errorJsonRPC"] = b.makeType(&node.Object{
+		Alias: "-",
 		Name: "errorJsonRPC",
 		Type: "object",
-		Fields: []node.Object{
+		Fields: []*node.Object{
 			{Name: "id", Type: "uuid.UUID"},
 			{Name: "jsonrpc", Type: "string", Tags: tags.DocTags{"example": "2.0"}},
-			{Name: "error", Fields: []node.Object{
+			{Name: "error", Alias: "-", Fields: []*node.Object{
 				{Name: "code", Type: "int", Tags: tags.DocTags{"example": "-32603"}},
 				{Name: "message", Type: "string", Tags: tags.DocTags{"example": "not found"}},
 				{Name: "data", Type: "object", IsNullable: true},
 			}},
 		},
-	})
+	}, swagger)
 }

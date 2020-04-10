@@ -272,14 +272,14 @@ func cmdMeta(c *cli.Context) (err error) {
 
 func buildSwagger(ifaceFolder, outPath string, toJson bool, ifaceNames ...string) (err error) {
 
-	nodeSource, err := node.Parse(ifaceFolder, ifaceNames...)
+	nodeSource, err := node.New().Parse(ifaceFolder, ifaceNames...)
 
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("parse %s for %v", ifaceFolder, ifaceNames))
 	}
 
 	var swaggerDoc swagger.Swagger
-	if swaggerDoc, err = swagger.BuildSwagger(nodeSource); err != nil {
+	if swaggerDoc, err = swagger.New().BuildSwagger(nodeSource); err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("build swagger %s for %v", ifaceFolder, ifaceNames))
 	}
 
@@ -305,7 +305,7 @@ func buildMeta(ifaceFolder string, outPath string, ifaceNames ...string) (err er
 
 	var serviceInfo node.Node
 
-	if serviceInfo, err = node.Parse(ifaceFolder, ifaceNames...); err != nil {
+	if serviceInfo, err = node.New().Parse(ifaceFolder, ifaceNames...); err != nil {
 		return
 	}
 

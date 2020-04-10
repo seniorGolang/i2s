@@ -19,7 +19,7 @@ type Node struct {
 type Event struct {
 	Name string       `json:"name"`
 	Tags tags.DocTags `json:"tags,omitempty"`
-	Type Object       `json:"type,omitempty"`
+	Type *Object      `json:"type,omitempty"`
 }
 
 type Service struct {
@@ -31,24 +31,27 @@ type Service struct {
 type Method struct {
 	Name      string       `json:"name"`
 	Tags      tags.DocTags `json:"tags,omitempty"`
-	Results   []Object     `json:"results,omitempty"`
-	Arguments []Object     `json:"arguments,omitempty"`
+	Results   []*Object    `json:"results,omitempty"`
+	Arguments []*Object    `json:"arguments,omitempty"`
 
 	HasContext  bool `json:"hasContext,omitempty"`
 	ReturnError bool `json:"returnError,omitempty"`
 }
 
 type Object struct {
-	Name   string   `json:"name"`
-	Type   string   `json:"type"`
-	Fields []Object `json:"fields,omitempty"`
+	Name   string    `json:"name"`
+	Type   string    `json:"type"`
+	Fields []*Object `json:"fields,omitempty"`
 
 	Tags     tags.DocTags        `json:"tags,omitempty"`
 	TypeTags map[string][]string `json:"typeTags,omitempty"`
-	SubTypes map[string]Object   `json:"subTypes,omitempty"`
+	SubTypes map[string]*Object  `json:"subTypes,omitempty"`
+
+	Alias string `json:"alias,omitempty"`
 
 	IsMap      bool `json:"isMap,omitempty"`
 	IsArray    bool `json:"isArray,omitempty"`
+	IsBuildIn  bool `json:"isBuildIn,omitempty"`
 	IsPrivate  bool `json:"isPrivate,omitempty"`
 	IsNullable bool `json:"isNullable,omitempty"`
 	IsEllipsis bool `json:"isEllipsis,omitempty"`

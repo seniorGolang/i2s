@@ -12,7 +12,7 @@ import (
 	"github.com/seniorGolang/i2s/pkg/tags"
 )
 
-func ParseEvents(eventsDirectory string) (events []Event, err error) {
+func (p *NodeParser) ParseEvents(eventsDirectory string) (events []Event, err error) {
 
 	var files []os.FileInfo
 	if files, err = ioutil.ReadDir(eventsDirectory); err != nil {
@@ -36,8 +36,8 @@ func ParseEvents(eventsDirectory string) (events []Event, err error) {
 
 			if objectTags.IsSet("event") {
 
-				var objectType Object
-				objectType, err = parseObject(eventsDirectory, types.Variable{
+				var objectType *Object
+				objectType, err = p.parseObject(eventsDirectory, types.Variable{
 					Base: object.Base,
 					Type: object,
 				})

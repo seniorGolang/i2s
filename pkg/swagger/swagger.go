@@ -7,9 +7,14 @@ import (
 	"github.com/seniorGolang/i2s/pkg/logger"
 )
 
-var (
-	log = logger.Log.WithField("module", "swagger")
-)
+type Builder struct {
+}
+
+func New() *Builder {
+	return &Builder{}
+}
+
+var log = logger.Log.WithField("module", "swagger")
 
 type Swagger struct {
 	OpenAPI    string          `json:"openapi" yaml:"openapi"`

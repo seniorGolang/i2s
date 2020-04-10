@@ -5,7 +5,7 @@ import (
 	"github.com/seniorGolang/i2s/pkg/utils"
 )
 
-func buildObjects(node node.Node, swagger *Swagger) {
+func (b *Builder) buildObjects(node node.Node, swagger *Swagger) {
 
 	for _, service := range node.Services {
 
@@ -19,7 +19,7 @@ func buildObjects(node node.Node, swagger *Swagger) {
 					Tags:        []string{utils.ToLowerCamel(service.Name)},
 				}
 
-				moveArgumentsToParameters(&method, op)
+				b.moveArgumentsToParameters(&method, op, swagger)
 			}
 		}
 	}

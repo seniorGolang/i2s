@@ -16,25 +16,40 @@ import (
 	"github.com/seniorGolang/i2s/pkg/tags"
 )
 
-func parseObject(pkgPath string, v types.Variable) (obj Object, err error) {
-	return makeType(pkgPath, v, v.Type)
+func (p *NodeParser) parseObject(pkgPath string, v types.Variable) (obj *Object, err error) {
+	return p.makeType(pkgPath, v, v.Type)
 }
 
-func objectFromStruct(pkgPath string, structInfo types.Struct) (obj Object) {
+func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (obj *Object) {
 
+	obj = &Object{}
 	obj.Name = structInfo.Name
 	obj.Type = structInfo.Base.Name
 	obj.Tags = tags.ParseTags(structInfo.Docs)
 
+	p.objects[obj.Type] = obj
+
 	for _, fieldInfo := range structInfo.Fields {
 
-		field, err := makeType(pkgPath, fieldInfo.Variable, fieldInfo.Type)
+		var err error
+		var found bool
+		var field *Object
 
-		if err != nil {
-			log.Error(fieldInfo, err)
+		if field, found = p.objects[fieldInfo.Type.String()]; !found {
+
+			field, err = p.makeType(pkgPath, fieldInfo.Variable, fieldInfo.Type)
+
+			if err != nil {
+				log.Error(fieldInfo, err)
+			}
+
+		} else {
+
+			field = &Object{Name: fieldInfo.Name, Type: fieldInfo.Type.String(), Alias: field.Type}
+			field.TypeTags = fieldInfo.Tags
+			obj.Fields = append(obj.Fields, field)
+			continue
 		}
-
-		field.TypeTags = fieldInfo.Tags
 
 		if len(fieldInfo.Name) > 0 {
 			field.IsPrivate = string([]rune(fieldInfo.Name)[0]) != strings.ToUpper(string([]rune(fieldInfo.Name)[0]))
@@ -44,7 +59,7 @@ func objectFromStruct(pkgPath string, structInfo types.Struct) (obj Object) {
 	return
 }
 
-func makeType(pkgPath string, field types.Variable, fieldType types.Type) (obj Object, err error) {
+func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType types.Type) (obj *Object, err error) {
 
 	for fieldType != nil {
 
@@ -53,65 +68,81 @@ func makeType(pkgPath string, field types.Variable, fieldType types.Type) (obj O
 		case types.TName:
 
 			if IsBuiltin(fieldType) {
-				obj = Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs)}
+				obj = &Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs), IsBuildIn: true}
 				return
 			}
 
-			obj, err = searchTypeInfo(pkgPath, f.TypeName)
-			obj.Name = field.Name
+			if knownObject, found := p.objects[f.TypeName]; !found {
+
+				obj, err = p.searchTypeInfo(pkgPath, f.TypeName)
+				obj.Name = field.Name
+
+				p.objects[obj.Type] = obj
+				return
+			} else {
+				obj = &Object{Name: field.Name, Type: field.Type.String(), Tags: tags.ParseTags(field.Docs), Alias: knownObject.Type}
+			}
 			return
 
 		case types.Struct:
 
 			if IsBuiltin(fieldType) {
-				obj = Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs)}
+				obj = &Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs)}
 				return
 			}
-			obj, err = searchTypeInfo(pkgPath, f.Name)
+			obj, err = p.searchTypeInfo(pkgPath, f.Name)
 			obj.Name = field.Name
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TImport:
 
 			if IsBuiltin(fieldType) {
-				obj = Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs)}
+				obj = &Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs), IsBuildIn: true}
+				p.objects[obj.Type] = obj
 				return
 			}
-			obj, err = searchTypeInfo(f.Import.Package, f.Next.String())
+			obj, err = p.searchTypeInfo(f.Import.Package, f.Next.String())
 			obj.Name = field.Name
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TArray:
-			obj, err = makeType(pkgPath, field, f.Next)
+			obj, err = p.makeType(pkgPath, field, f.Next)
 			obj.IsArray = true
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TEllipsis:
-			obj, err = makeType(pkgPath, field, f.Next)
+			obj, err = p.makeType(pkgPath, field, f.Next)
 			obj.IsEllipsis = true
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TMap:
 
 			m := fieldType.(types.TMap)
 
-			key, _ := makeType("", field, m.Key)
-			val, _ := makeType("", field, m.Value)
+			key, _ := p.makeType("", field, m.Key)
+			val, _ := p.makeType("", field, m.Value)
 
-			obj = Object{Name: field.Name, IsMap: true, Tags: tags.ParseTags(field.Docs), Type: fmt.Sprintf("map[%s]%s", m.Key, m.Value), SubTypes: map[string]Object{
+			obj = &Object{Name: field.Name, IsMap: true, Tags: tags.ParseTags(field.Docs), Type: fmt.Sprintf("map[%s]%s", m.Key, m.Value), SubTypes: map[string]*Object{
 				"key":   key,
 				"value": val,
 			}}
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TPointer:
-			obj, err = makeType(pkgPath, field, f.Next)
+			obj, err = p.makeType(pkgPath, field, f.Next)
 			obj.IsNullable = true
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TInterface:
 
-			obj = Object{Name: field.Name, Tags: tags.ParseTags(field.Docs), Type: "Interface", IsNullable: true}
+			obj = &Object{Name: field.Name, Tags: tags.ParseTags(field.Docs), Type: "Interface", IsNullable: true}
+			p.objects[obj.Type] = obj
 			return
 
 		default:
@@ -122,27 +153,27 @@ func makeType(pkgPath string, field types.Variable, fieldType types.Type) (obj O
 	return
 }
 
-func searchTypeInfo(pkg, name string) (obj Object, err error) {
+func (p *NodeParser) searchTypeInfo(pkg, name string) (obj *Object, err error) {
 
-	if obj, err = getStructInfo(pkg, name); err != nil {
+	if obj, err = p.getStructInfo(pkg, name); err != nil {
 
 		pkgPath := mod.PkgModPath(pkg)
 
-		if obj, err = getStructInfo(pkgPath, name); err != nil {
+		if obj, err = p.getStructInfo(pkgPath, name); err != nil {
 
 			pkgPath = path.Join("./vendor", pkg)
 
-			if obj, err = getStructInfo(pkgPath, name); err != nil {
+			if obj, err = p.getStructInfo(pkgPath, name); err != nil {
 
 				pkgPath = trimLocalPkg(pkg)
-				obj, err = getStructInfo(pkgPath, name)
+				obj, err = p.getStructInfo(pkgPath, name)
 			}
 		}
 	}
 	return
 }
 
-func getStructInfo(relPath, name string) (obj Object, err error) {
+func (p *NodeParser) getStructInfo(relPath, name string) (obj *Object, err error) {
 
 	pkgPath, _ := filepath.Abs(relPath)
 
@@ -168,7 +199,7 @@ func getStructInfo(relPath, name string) (obj Object, err error) {
 		for _, structInfo := range srcFile.Structures {
 
 			if structInfo.Name == name {
-				obj = objectFromStruct(relPath, structInfo)
+				obj = p.objectFromStruct(relPath, structInfo)
 				break
 			}
 		}

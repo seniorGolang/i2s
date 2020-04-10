@@ -14,7 +14,7 @@ type move struct {
 	name  string
 }
 
-func buildHttp(node node.Node, swagger *Swagger) {
+func (b *Builder) buildHttp(node node.Node, swagger *Swagger) {
 
 	for _, service := range node.Services {
 
@@ -35,8 +35,8 @@ func buildHttp(node node.Node, swagger *Swagger) {
 					Tags:        []string{utils.ToLowerCamel(service.Name)},
 				}
 
-				moveArgumentsToParameters(&method, op)
-				addComponent(service.Name, method, swagger, formatHttp)
+				b.moveArgumentsToParameters(&method, op, swagger)
+				b.addRequestResponse(service.Name, method, swagger, formatHttp)
 
 				if len(method.Arguments) != 0 {
 					httpReqContentTypes = strings.Split(method.Tags.Value("http-request-content-type", "application/json"), "|")
@@ -111,7 +111,7 @@ func buildHttp(node node.Node, swagger *Swagger) {
 	}
 }
 
-func moveArgumentsToParameters(method *node.Method, op *operation) {
+func (b *Builder) moveArgumentsToParameters(method *node.Method, op *operation, swagger *Swagger) {
 
 	pMove := make(map[string]move)
 
@@ -146,7 +146,7 @@ func moveArgumentsToParameters(method *node.Method, op *operation) {
 		pMove[argParam] = move{pType: "path", name: argParam}
 	}
 
-	var clearArguments []node.Object
+	var clearArguments []*node.Object
 	for _, argObject := range method.Arguments {
 
 		if move, found := pMove[argObject.Name]; found {
@@ -155,7 +155,7 @@ func moveArgumentsToParameters(method *node.Method, op *operation) {
 				Name:     move.name,
 				In:       move.pType,
 				Required: true,
-				Schema:   makeComponent(argObject),
+				Schema:   b.makeType(argObject, swagger),
 			}
 
 			if move.pType == "query" {

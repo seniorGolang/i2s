@@ -6,7 +6,7 @@ import (
 	"github.com/seniorGolang/i2s/pkg/node"
 )
 
-func makeSwagger(node node.Node, swagger *Swagger) {
+func (b *Builder) makeSwagger(node node.Node, swagger *Swagger) {
 
 	log.Info("generate service info")
 
