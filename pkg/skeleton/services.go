@@ -35,7 +35,7 @@ func renderBaseService(meta metaInfo, servicesPath string) (err error) {
 	srcFile := NewFile("service")
 	srcFile.PackageComment("@i2s version=0.0.1")
 	srcFile.PackageComment(fmt.Sprintf("@i2s backend=%s", meta.projectName))
-	srcFile.PackageComment(fmt.Sprintf("@i2s title=\"%s API\"", meta.projectName))
+	srcFile.PackageComment(fmt.Sprintf("@i2s title=`%s API`", meta.projectName))
 	srcFile.PackageComment(fmt.Sprintf("@i2s description=`A service which provide %s API`", meta.projectName))
 	srcFile.PackageComment(fmt.Sprintf("@i2s servers=`http://%s:9000`", meta.projectName))
 
