@@ -64,8 +64,8 @@ func (b *Builder) addRequestResponse(serviceName string, method node.Method, swa
 
 		respObject = &node.Object{
 			Alias: "-",
-			Name: responseType,
-			Type: "object",
+			Name:  responseType,
+			Type:  "object",
 			Fields: []*node.Object{
 				{Name: "id", Type: "uuid.UUID"},
 				{Name: "jsonrpc", Type: "string", Tags: tags.DocTags{"example": "2.0"}},

@@ -98,8 +98,8 @@ func (b *Builder) addErrorJsonRPC(swagger *Swagger) {
 
 	swagger.Components.Schemas["errorJsonRPC"] = b.makeType(&node.Object{
 		Alias: "-",
-		Name: "errorJsonRPC",
-		Type: "object",
+		Name:  "errorJsonRPC",
+		Type:  "object",
 		Fields: []*node.Object{
 			{Name: "id", Type: "uuid.UUID"},
 			{Name: "jsonrpc", Type: "string", Tags: tags.DocTags{"example": "2.0"}},
