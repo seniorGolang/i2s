@@ -38,6 +38,7 @@ func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (
 		if field, found = p.objects[fieldInfo.Type.String()]; !found {
 
 			field, err = p.makeType(pkgPath, fieldInfo.Variable, fieldInfo.Type)
+			field.TypeTags = fieldInfo.Tags
 
 			if err != nil {
 				log.Error(fieldInfo, err)
@@ -75,7 +76,9 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 			if knownObject, found := p.objects[f.TypeName]; !found {
 
 				obj, err = p.searchTypeInfo(pkgPath, f.TypeName, field)
+
 				obj.Name = field.Name
+				obj.Tags = tags.ParseTags(field.Docs)
 
 				p.objects[obj.Type] = obj
 				return
