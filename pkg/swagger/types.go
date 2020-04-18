@@ -24,11 +24,6 @@ func (b *Builder) buildTypes(node node.Node, swagger *Swagger) {
 					swagger.Components.Schemas[object.Name] = b.makeType(object, swagger)
 				}
 			}
-
-			for _, object := range method.Results {
-
-				fmt.Println(object.Name)
-			}
 		}
 	}
 	return
