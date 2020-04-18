@@ -74,7 +74,7 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 
 			if knownObject, found := p.objects[f.TypeName]; !found {
 
-				obj, err = p.searchTypeInfo(pkgPath, f.TypeName)
+				obj, err = p.searchTypeInfo(pkgPath, f.TypeName, field)
 				obj.Name = field.Name
 
 				p.objects[obj.Type] = obj
@@ -90,7 +90,7 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				obj = &Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs)}
 				return
 			}
-			obj, err = p.searchTypeInfo(pkgPath, f.Name)
+			obj, err = p.searchTypeInfo(pkgPath, f.Name, field)
 			obj.Name = field.Name
 			p.objects[obj.Type] = obj
 			return
@@ -102,9 +102,9 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				p.objects[obj.Type] = obj
 				return
 			}
-			obj, err = p.searchTypeInfo(f.Import.Package, f.Next.String())
+			obj, err = p.searchTypeInfo(f.Import.Package, f.Next.String(), field)
 			obj.Name = field.Name
-			p.objects[obj.Type] = obj
+			p.objects[f.Next.String()] = obj
 			return
 
 		case types.TArray:
@@ -123,14 +123,16 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 
 			m := fieldType.(types.TMap)
 
-			key, _ := p.makeType("", field, m.Key)
-			val, _ := p.makeType("", field, m.Value)
+			key, _ := p.makeType(pkgPath, field, m.Key)
+			val, _ := p.makeType(pkgPath, field, m.Value)
+
+			key.Name = ""
+			val.Name = ""
 
 			obj = &Object{Name: field.Name, IsMap: true, Tags: tags.ParseTags(field.Docs), Type: fmt.Sprintf("map[%s]%s", m.Key, m.Value), SubTypes: map[string]*Object{
 				"key":   key,
 				"value": val,
 			}}
-			p.objects[obj.Type] = obj
 			return
 
 		case types.TPointer:
@@ -153,27 +155,27 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 	return
 }
 
-func (p *NodeParser) searchTypeInfo(pkg, name string) (obj *Object, err error) {
+func (p *NodeParser) searchTypeInfo(pkg, name string, field types.Variable) (obj *Object, err error) {
 
-	if obj, err = p.getStructInfo(pkg, name); err != nil {
+	if obj, err = p.getStructInfo(pkg, name, field); err != nil {
 
 		pkgPath := mod.PkgModPath(pkg)
 
-		if obj, err = p.getStructInfo(pkgPath, name); err != nil {
+		if obj, err = p.getStructInfo(pkgPath, name, field); err != nil {
 
 			pkgPath = path.Join("./vendor", pkg)
 
-			if obj, err = p.getStructInfo(pkgPath, name); err != nil {
+			if obj, err = p.getStructInfo(pkgPath, name, field); err != nil {
 
 				pkgPath = trimLocalPkg(pkg)
-				obj, err = p.getStructInfo(pkgPath, name)
+				obj, err = p.getStructInfo(pkgPath, name, field)
 			}
 		}
 	}
 	return
 }
 
-func (p *NodeParser) getStructInfo(relPath, name string) (obj *Object, err error) {
+func (p *NodeParser) getStructInfo(relPath, name string, field types.Variable) (obj *Object, err error) {
 
 	pkgPath, _ := filepath.Abs(relPath)
 
@@ -196,11 +198,19 @@ func (p *NodeParser) getStructInfo(relPath, name string) (obj *Object, err error
 			return errors.Wrap(err, fmt.Sprintf("%s,%s", relPath, name))
 		}
 
+		for _, typeInfo := range srcFile.Types {
+
+			if typeInfo.Name == name {
+				obj, err = p.makeType(relPath, field, typeInfo.Type)
+				return nil
+			}
+		}
+
 		for _, structInfo := range srcFile.Structures {
 
 			if structInfo.Name == name {
 				obj = p.objectFromStruct(relPath, structInfo)
-				break
+				return nil
 			}
 		}
 		return nil

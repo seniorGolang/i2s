@@ -42,11 +42,11 @@ func (b *Builder) addRequestResponse(serviceName string, method node.Method, swa
 		}
 
 		if len(method.Results) > 0 {
-			swagger.Components.Schemas[responseType] = b.makeComponent(method.Results)
+			swagger.Components.Schemas[responseType] = b.makeComponent(method.Results, swagger)
 		}
 
 		if len(method.Arguments) > 0 {
-			swagger.Components.Schemas[requestType] = b.makeComponent(method.Arguments)
+			swagger.Components.Schemas[requestType] = b.makeComponent(method.Arguments, swagger)
 		}
 	}
 
@@ -76,21 +76,21 @@ func (b *Builder) addRequestResponse(serviceName string, method node.Method, swa
 		swagger.Components.Schemas[responseType] = b.makeType(respObject, swagger)
 
 		if len(method.Results) > 0 {
-			swagger.Components.Schemas[responseType].Properties["result"] = b.makeComponent(method.Results)
+			swagger.Components.Schemas[responseType].Properties["result"] = b.makeComponent(method.Results, swagger)
 		}
 
 		if len(method.Arguments) > 0 {
 			if swagger.Components.Schemas[requestType].Properties == nil {
 				s := swagger.Components.Schemas[requestType]
-				s.Properties = Properties{"params": b.makeComponent(method.Arguments)}
+				s.Properties = Properties{"params": b.makeComponent(method.Arguments, swagger)}
 				swagger.Components.Schemas[requestType] = s
 			}
-			swagger.Components.Schemas[requestType].Properties["params"] = b.makeComponent(method.Arguments)
+			swagger.Components.Schemas[requestType].Properties["params"] = b.makeComponent(method.Arguments, swagger)
 		}
 	}
 }
 
-func (b *Builder) makeComponent(fields []*node.Object) (com schema) {
+func (b *Builder) makeComponent(fields []*node.Object, swagger *Swagger) (com schema) {
 
 	com.Properties = make(Properties)
 
@@ -106,7 +106,7 @@ func (b *Builder) makeComponent(fields []*node.Object) (com schema) {
 			if err := json.Unmarshal([]byte(field.Tags.Value("example", "{}")), &com.Example); err != nil {
 				log.Error(err)
 			}
-			return
+			continue
 		}
 
 		if len(field.Fields) != 0 {
@@ -119,11 +119,25 @@ func (b *Builder) makeComponent(fields []*node.Object) (com schema) {
 
 			if field.IsArray {
 				com.Properties[field.Name] = schema{Type: "array", Format: format}
-				return
+				continue
+			}
+
+			if field.IsMap {
+
+				typeNameVal, formatVal := castType(field.SubTypes["value"])
+				additionalProperties := schema{Type: typeNameVal, Format: formatVal}
+
+
+				if len(field.SubTypes["value"].Fields) > 0 {
+					additionalProperties = schema{Ref: fmt.Sprintf("#/components/schemas/%s", typeNameVal)}
+					swagger.Components.Schemas[typeNameVal] = b.makeType(field.SubTypes["value"], swagger)
+				}
+
+				com.Properties[field.Name] = schema{Type: "object", AdditionalProperties: additionalProperties}
+				continue
 			}
 
 			com.Properties[field.Name] = schema{Type: typeName, Format: format}
-			return
 		}
 	}
 	return

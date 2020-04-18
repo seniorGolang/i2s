@@ -20,7 +20,7 @@ func (b *Builder) buildTypes(node node.Node, swagger *Swagger) {
 
 			for _, object := range method.Arguments {
 
-				if !object.IsBuildIn {
+				if len(object.Fields) > 0 {
 					swagger.Components.Schemas[object.Name] = b.makeType(object, swagger)
 				}
 			}

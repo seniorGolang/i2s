@@ -39,8 +39,8 @@ type Method struct {
 }
 
 type Object struct {
-	Name   string    `json:"name"`
-	Type   string    `json:"type"`
+	Name   string    `json:"name,omitempty"`
+	Type   string    `json:"type,omitempty"`
 	Fields []*Object `json:"fields,omitempty"`
 
 	Tags     tags.DocTags        `json:"tags,omitempty"`
