@@ -31,8 +31,8 @@ func GenerateSkeleton(projectName, repoName, baseDir string, jaeger, zipkin, mon
 		packageName = path.Join(meta.repoName, meta.projectName)
 	}
 
-	if err = exec.Command("go", "mod", "init", path.Join(meta.repoName, meta.projectName)).Run(); err != nil {
-		return
+	if err = exec.Command("go", "mod", "init", path.Join(meta.repoName)).Run(); err != nil {
+		log.Warning("go.mod already exist")
 	}
 
 	if err = genConfig(meta); err != nil {
@@ -47,7 +47,7 @@ func GenerateSkeleton(projectName, repoName, baseDir string, jaeger, zipkin, mon
 		return
 	}
 
-	if err = makeCmdMain(meta, path.Join(meta.repoName, meta.projectName), path.Join(meta.baseDir, "cmd", projectName)); err != nil {
+	if err = makeCmdMain(meta, meta.repoName, path.Join(meta.baseDir, "cmd", projectName)); err != nil {
 		return
 	}
 
