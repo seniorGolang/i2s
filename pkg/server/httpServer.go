@@ -188,8 +188,8 @@ func httpServer(info *meta.GenerationInfo) *Statement {
 					pathPrefix = prefix
 				}
 
-				httpPath := path.Join(pathPrefix, service, "{method}")
-				httpBasePath := path.Join(pathPrefix, service)
+				httpPath := path.Join(pathPrefix, strings.ToLower(service), "{method}")
+				httpBasePath := path.Join(pathPrefix, strings.ToLower(service))
 
 				g.Id("mux").Dot("Methods").Call(Lit("POST")).Dot("Path").
 					Call(Lit("/" + httpBasePath)).Dot("Handler").Call(Id("jsonRpcServerHandler").Call(
