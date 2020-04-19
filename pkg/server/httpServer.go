@@ -33,6 +33,7 @@ func renderHttpServer(info *meta.GenerationInfo) (err error) {
 
 	srcFile.Add(appServeHttp(info))
 	srcFile.Add(httpServerHandler(info))
+	srcFile.Line().Add(caselessMatcher())
 	srcFile.Line().Add(httpServer(info))
 
 	filePath := path.Join(info.OutputFilePath, "transport", "server")
@@ -160,6 +161,20 @@ func httpServerHandler(info *meta.GenerationInfo) Code {
 		})
 }
 
+func caselessMatcher() *Statement {
+
+	return Func().Id("caselessMatcher").Params(Id("next").Qual(packagePathHttp, "Handler")).Params(Qual(packagePathHttp, "Handler")).Block(
+		Return(
+			Qual(packagePathHttp, "HandlerFunc").Call(
+				Func().Params(Id("w").Qual(packagePathHttp, "ResponseWriter"), Id("r").Op("*").Qual(packagePathHttp, "Request")).Block(
+					Id("r").Dot("URL").Dot("Path").Op("=").Qual(packagePathStrings, "ToLower").Call(Id("r").Dot("URL").Dot("Path")),
+					Id("next").Dot("ServeHTTP").Call(Id("w"), Id("r")),
+				),
+			),
+		),
+	)
+}
+
 func httpServer(info *meta.GenerationInfo) *Statement {
 
 	return Func().Id("newHTTPHandler").ParamsFunc(func(p *Group) {
@@ -237,6 +252,6 @@ func httpServer(info *meta.GenerationInfo) *Statement {
 				}
 			}
 		}
-		g.Return(Id("accessControl").Call(Id("mux")))
+		g.Return(Id("accessControl").Call(Id("caselessMatcher").Call(Id("mux"))))
 	})
 }

@@ -26,6 +26,7 @@ const (
 	packagePathFmt                = "fmt"
 	packagePathErrors             = "errors"
 	packagePathStrconv            = "strconv"
+	packagePathStrings            = "strings"
 	packageUUID                   = "github.com/seniorGolang/gokit/types/uuid"
 	packageTypes                  = "github.com/seniorGolang/gokit/types"
 	packagePPROF                  = "github.com/seniorGolang/gokit/pprof"

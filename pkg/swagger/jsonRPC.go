@@ -24,7 +24,7 @@ func (b *Builder) buildJsonRPC(node node.Node, swagger *Swagger) {
 				op := &operation{
 					Description: method.Tags.Value("desc"),
 					Summary:     method.Tags.Value("summary"),
-					Tags:        []string{utils.ToLowerCamel(service.Name)},
+					Tags:        []string{strings.ToLower(service.Name)},
 				}
 
 				b.moveArgumentsToParameters(&method, op, swagger)
