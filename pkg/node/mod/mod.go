@@ -50,6 +50,8 @@ func parseMod(modPath string) (pkgPath map[string]string) {
 	goPath := os.Getenv("GOPATH")
 
 	pkgPath = make(map[string]string)
+	pkgPath[mod.Module.Mod.Path] = path.Dir(modPath)
+
 	for _, require := range mod.Require {
 		pkgPath[require.Syntax.Token[0]] = fmt.Sprintf("%s/pkg/mod/%s@%s", goPath, require.Syntax.Token[0], require.Mod.Version)
 	}

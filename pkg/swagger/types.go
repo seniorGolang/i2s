@@ -21,7 +21,14 @@ func (b *Builder) buildTypes(node node.Node, swagger *Swagger) {
 			for _, object := range method.Arguments {
 
 				if len(object.Fields) > 0 {
-					swagger.Components.Schemas[object.Name] = b.makeType(object, swagger)
+					swagger.Components.Schemas[object.Type] = b.makeType(object, swagger)
+				}
+			}
+
+			for _, object := range method.Results {
+
+				if len(object.Fields) > 0 {
+					swagger.Components.Schemas[object.Type] = b.makeType(object, swagger)
 				}
 			}
 		}
@@ -72,7 +79,17 @@ func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 
 		com.Type = "array"
 		com.Properties = nil
-		com.Items = &schema{Type: "", Format: format, Ref: fmt.Sprintf("#/components/schemas/%s", typeName)}
+
+		if format == "binary" {
+
+			com.Type = typeName
+			com.Format = format
+
+		} else if object.IsBuildIn {
+			com.Items = &schema{Type: typeName, Format: format}
+		} else {
+			com.Items = &schema{Type: "", Format: format, Ref: fmt.Sprintf("#/components/schemas/%s", typeName)}
+		}
 		return
 	}
 
@@ -141,10 +158,11 @@ func castType(object *node.Object) (typeName, format string) {
 
 	case "int", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
 		typeName = "number"
-	}
 
-	if object.IsArray {
-		typeName = strings.TrimPrefix(object.Type, "[]")
+	default:
+		if object.IsArray {
+			typeName = strings.TrimPrefix(object.Type, "[]")
+		}
 	}
 
 	format = object.Tags.Value("format", format)

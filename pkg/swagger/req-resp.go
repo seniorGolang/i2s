@@ -110,7 +110,7 @@ func (b *Builder) makeComponent(fields []*node.Object, swagger *Swagger) (com sc
 		}
 
 		if len(field.Fields) != 0 {
-			com.Properties[field.Name] = schema{Ref: fmt.Sprintf("#/components/schemas/%s", field.Name)}
+			com.Properties[field.Name] = schema{Ref: fmt.Sprintf("#/components/schemas/%s", field.Type)}
 		}
 
 		typeName, format := castType(field)

@@ -188,6 +188,8 @@ func (p *NodeParser) getStructInfo(relPath, name string, field types.Variable) (
 			return err
 		}
 
+		fmt.Println(filePath, info.Name())
+
 		if info.IsDir() {
 			return nil
 		}
@@ -197,7 +199,7 @@ func (p *NodeParser) getStructInfo(relPath, name string, field types.Variable) (
 		}
 
 		var srcFile *types.File
-		if srcFile, err = astra.ParseFile(path.Join(pkgPath, info.Name())); err != nil {
+		if srcFile, err = astra.ParseFile(filePath); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("%s,%s", relPath, name))
 		}
 
