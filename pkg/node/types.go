@@ -10,10 +10,11 @@ import (
 )
 
 type Node struct {
-	Name     string       `json:"name"`
-	Tags     tags.DocTags `json:"tags,omitempty"`
-	Events   []Event      `json:"events,omitempty"`
-	Services []Service    `json:"services,omitempty"`
+	Name     string             `json:"name"`
+	Tags     tags.DocTags       `json:"tags,omitempty"`
+	Events   []Event            `json:"events,omitempty"`
+	Services []Service          `json:"services,omitempty"`
+	Types    map[string]*Object `json:"types,omitempty"`
 }
 
 type Event struct {
@@ -69,19 +70,27 @@ func (n Node) SaveJSON(path string) (err error) {
 
 func (o Object) Value(str string) (value interface{}) {
 
+	var err error
+
 	if o.Type == "bool" {
 
-		value, _ = strconv.ParseBool(str)
+		if value, err = strconv.ParseBool(str); err != nil {
+			value = nil
+		}
 		return
 
 	} else if strings.HasPrefix(o.Type, "int") {
 
-		value, _ = strconv.ParseInt(str, 10, 64)
+		if value, err = strconv.ParseInt(str, 10, 64); err != nil {
+			value = nil
+		}
 		return
 
 	} else if strings.HasPrefix(o.Type, "float") {
 
-		value, _ = strconv.ParseFloat(str, 64)
+		if value, err = strconv.ParseFloat(str, 64); err != nil {
+			value = nil
+		}
 		return
 	}
 

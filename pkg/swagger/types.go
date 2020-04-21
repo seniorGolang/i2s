@@ -14,6 +14,10 @@ func (b *Builder) buildTypes(node node.Node, swagger *Swagger) {
 		swagger.Components.Schemas = make(schemas)
 	}
 
+	for _, object := range node.Types {
+		swagger.Components.Schemas[object.Type] = b.makeType(object, swagger)
+	}
+
 	for _, service := range node.Services {
 
 		for _, method := range service.Methods {

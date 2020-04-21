@@ -109,6 +109,17 @@ func (b *Builder) makeComponent(fields []*node.Object, swagger *Swagger) (com sc
 			continue
 		}
 
+		if field.Alias != "" && field.Alias != "-" {
+
+			if field.IsArray {
+				com.Properties[field.Name] = schema{Type: "array", Items: &schema{Ref: fmt.Sprintf("#/components/schemas/%s", field.Alias)}}
+				continue
+			}
+
+			com.Ref = fmt.Sprintf("#/components/schemas/%s", field.Alias)
+			continue
+		}
+
 		if len(field.Fields) != 0 {
 			com.Properties[field.Name] = schema{Ref: fmt.Sprintf("#/components/schemas/%s", field.Type)}
 		}
@@ -130,6 +141,10 @@ func (b *Builder) makeComponent(fields []*node.Object, swagger *Swagger) (com sc
 				if len(field.SubTypes["value"].Fields) > 0 {
 					additionalProperties = schema{Ref: fmt.Sprintf("#/components/schemas/%s", typeNameVal)}
 					swagger.Components.Schemas[typeNameVal] = b.makeType(field.SubTypes["value"], swagger)
+				}
+
+				if field.SubTypes["value"].Alias != "" {
+					additionalProperties = schema{Ref: fmt.Sprintf("#/components/schemas/%s", field.SubTypes["value"].Alias)}
 				}
 
 				com.Properties[field.Name] = schema{Type: "object", AdditionalProperties: additionalProperties}

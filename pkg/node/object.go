@@ -23,12 +23,11 @@ func (p *NodeParser) parseObject(pkgPath string, v types.Variable) (obj *Object,
 func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (obj *Object) {
 
 	obj = &Object{}
-	obj.Name = structInfo.Name
-	obj.Type = structInfo.Base.Name
+	obj.Type = structInfo.Name
 	obj.Tags = tags.ParseTags(structInfo.Docs)
 
-	if len(obj.Fields) > 0 {
-		p.objects[obj.Type] = obj
+	if len(structInfo.Fields) > 0 {
+		p.types[obj.Type] = obj
 	}
 
 	for _, fieldInfo := range structInfo.Fields {
@@ -37,7 +36,7 @@ func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (
 		var found bool
 		var field *Object
 
-		if field, found = p.objects[fieldInfo.Type.String()]; !found {
+		if field, found = p.types[fieldInfo.Type.String()]; !found {
 
 			field, err = p.makeType(pkgPath, fieldInfo.Variable, fieldInfo.Type)
 			field.TypeTags = fieldInfo.Tags
@@ -47,7 +46,7 @@ func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (
 			}
 
 			if field.IsMap && len(field.SubTypes["value"].Fields) > 0 {
-				p.objects[obj.Type] = obj
+				p.types[obj.Type] = obj
 			}
 
 		} else {
@@ -79,11 +78,10 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				return
 			}
 
-			if knownObject, found := p.objects[f.TypeName]; !found {
+			if knownObject, found := p.types[f.TypeName]; !found {
 
 				obj, err = p.searchTypeInfo(pkgPath, f.TypeName, field)
 
-				obj.Name = field.Name
 				obj.Tags = tags.ParseTags(field.Docs)
 				return
 
@@ -98,10 +96,12 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				obj = &Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs)}
 				return
 			}
-			obj, err = p.searchTypeInfo(pkgPath, f.Name, field)
-			obj.Name = field.Name
-			p.objects[obj.Type] = obj
-			return
+
+			if obj, err = p.searchTypeInfo(pkgPath, f.Name, field); err != nil {
+				return
+			}
+
+			return &Object{Alias: obj.Type}, err
 
 		case types.TImport:
 
@@ -110,8 +110,8 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				return
 			}
 			obj, err = p.searchTypeInfo(f.Import.Package, f.Next.String(), field)
-			obj.Name = field.Name
-			return
+
+			return &Object{Name: field.Name, Alias: f.Next.String()}, err
 
 		case types.TArray:
 			obj, err = p.makeType(pkgPath, field, f.Next)
@@ -137,7 +137,6 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				"key":   key,
 				"value": val,
 			}}
-			p.objects[obj.Type] = obj
 			return
 
 		case types.TPointer:

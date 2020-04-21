@@ -9,12 +9,12 @@ type NodeParser struct {
 	services []Service
 	fileTags tags.DocTags
 
-	objects map[string]*Object
+	types map[string]*Object
 }
 
 func New() *NodeParser {
 	return &NodeParser{
-		objects: make(map[string]*Object),
+		types: make(map[string]*Object),
 	}
 }
 
