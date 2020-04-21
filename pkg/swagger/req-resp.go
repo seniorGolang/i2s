@@ -127,7 +127,6 @@ func (b *Builder) makeComponent(fields []*node.Object, swagger *Swagger) (com sc
 				typeNameVal, formatVal := castType(field.SubTypes["value"])
 				additionalProperties := schema{Type: typeNameVal, Format: formatVal}
 
-
 				if len(field.SubTypes["value"].Fields) > 0 {
 					additionalProperties = schema{Ref: fmt.Sprintf("#/components/schemas/%s", typeNameVal)}
 					swagger.Components.Schemas[typeNameVal] = b.makeType(field.SubTypes["value"], swagger)

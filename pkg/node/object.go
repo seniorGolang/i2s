@@ -27,7 +27,9 @@ func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (
 	obj.Type = structInfo.Base.Name
 	obj.Tags = tags.ParseTags(structInfo.Docs)
 
-	p.objects[obj.Type] = obj
+	if len(obj.Fields) > 0 {
+		p.objects[obj.Type] = obj
+	}
 
 	for _, fieldInfo := range structInfo.Fields {
 
@@ -44,9 +46,13 @@ func (p *NodeParser) objectFromStruct(pkgPath string, structInfo types.Struct) (
 				log.Error(fieldInfo, err)
 			}
 
+			if field.IsMap && len(field.SubTypes["value"].Fields) > 0 {
+				p.objects[obj.Type] = obj
+			}
+
 		} else {
 
-			field = &Object{Name: fieldInfo.Name, Type: fieldInfo.Type.String(), Alias: field.Type}
+			field = &Object{Name: fieldInfo.Name, Type: fieldInfo.Type.String(), Alias: field.Type, Tags: field.Tags}
 			field.TypeTags = fieldInfo.Tags
 			obj.Fields = append(obj.Fields, field)
 			continue
@@ -79,9 +85,8 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 
 				obj.Name = field.Name
 				obj.Tags = tags.ParseTags(field.Docs)
-
-				p.objects[obj.Type] = obj
 				return
+
 			} else {
 				obj = &Object{Name: field.Name, Type: field.Type.String(), Tags: tags.ParseTags(field.Docs), Alias: knownObject.Type}
 			}
@@ -102,24 +107,20 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 
 			if IsBuiltin(fieldType) {
 				obj = &Object{Name: field.Name, Type: fieldType.String(), Tags: tags.ParseTags(field.Docs), IsBuildIn: true}
-				p.objects[obj.Type] = obj
 				return
 			}
 			obj, err = p.searchTypeInfo(f.Import.Package, f.Next.String(), field)
 			obj.Name = field.Name
-			p.objects[f.Next.String()] = obj
 			return
 
 		case types.TArray:
 			obj, err = p.makeType(pkgPath, field, f.Next)
 			obj.IsArray = true
-			p.objects[obj.Type] = obj
 			return
 
 		case types.TEllipsis:
 			obj, err = p.makeType(pkgPath, field, f.Next)
 			obj.IsEllipsis = true
-			p.objects[obj.Type] = obj
 			return
 
 		case types.TMap:
@@ -136,18 +137,17 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				"key":   key,
 				"value": val,
 			}}
+			p.objects[obj.Type] = obj
 			return
 
 		case types.TPointer:
 			obj, err = p.makeType(pkgPath, field, f.Next)
 			obj.IsNullable = true
-			p.objects[obj.Type] = obj
 			return
 
 		case types.TInterface:
 
 			obj = &Object{Name: field.Name, Tags: tags.ParseTags(field.Docs), Type: "Interface", IsNullable: true}
-			p.objects[obj.Type] = obj
 			return
 
 		default:
@@ -187,8 +187,6 @@ func (p *NodeParser) getStructInfo(relPath, name string, field types.Variable) (
 		if err != nil {
 			return err
 		}
-
-		fmt.Println(filePath, info.Name())
 
 		if info.IsDir() {
 			return nil

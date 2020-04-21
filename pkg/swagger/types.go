@@ -39,8 +39,8 @@ func (b *Builder) buildTypes(node node.Node, swagger *Swagger) {
 func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 
 	com.Nullable = object.IsNullable
-	com.Example = object.Value(object.Tags.Value("example"))
 	com.Description = object.Tags.Value("desc")
+	com.Example = object.Value(object.Tags.Value("example"))
 
 	typeName, format := castType(object)
 
@@ -90,6 +90,10 @@ func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 		} else {
 			com.Items = &schema{Type: "", Format: format, Ref: fmt.Sprintf("#/components/schemas/%s", typeName)}
 		}
+
+		if err := json.Unmarshal([]byte(object.Tags.Value("example", "{}")), &com.Example); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 
@@ -97,10 +101,26 @@ func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 
 		com.Type = "object"
 
-		valueType, _ := castType(object.SubTypes["value"])
+		if len(object.SubTypes["value"].Fields) != 0 {
 
-		com.AdditionalProperties = map[string]string{
-			"type": valueType,
+			b.makeType(object.SubTypes["value"], swagger)
+
+			com.AdditionalProperties = map[string]string{
+				"$ref": fmt.Sprintf("#/components/schemas/%s", object.SubTypes["value"].Type),
+			}
+
+		} else if object.SubTypes["value"].Alias != "" {
+
+			com.AdditionalProperties = map[string]string{
+				"$ref": fmt.Sprintf("#/components/schemas/%s", object.SubTypes["value"].Alias),
+			}
+
+		} else {
+
+			valueType, _ := castType(object.SubTypes["value"])
+			com.AdditionalProperties = map[string]string{
+				"type": valueType,
+			}
 		}
 
 		if err := json.Unmarshal([]byte(object.Tags.Value("example", "{}")), &com.Example); err != nil {
@@ -112,7 +132,7 @@ func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 	if len(object.Fields) == 0 {
 
 		if object.IsArray {
-			com.Items = &schema{Type: typeName, Format: format}
+			com.Items = &schema{Type: typeName, Format: format, Example: object}
 			com.Type = "array"
 			return
 		}
