@@ -94,10 +94,6 @@ func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 		} else {
 			com.Items = &schema{Type: "", Format: format, Ref: fmt.Sprintf("#/components/schemas/%s", typeName)}
 		}
-
-		if err := json.Unmarshal([]byte(object.Tags.Value("example", "{}")), &com.Example); err != nil {
-			log.Error(err)
-		}
 		return
 	}
 
@@ -136,8 +132,13 @@ func (b *Builder) makeType(object *node.Object, swagger *Swagger) (com schema) {
 	if len(object.Fields) == 0 {
 
 		if object.IsArray {
-			com.Items = &schema{Type: typeName, Format: format, Example: object}
+			com.Items = &schema{Type: typeName, Format: format}
 			com.Type = "array"
+			return
+		}
+
+		if object.Alias != "" && object.Alias != "-" {
+			com.Ref = fmt.Sprintf("#/components/schemas/%s", object.Alias)
 			return
 		}
 

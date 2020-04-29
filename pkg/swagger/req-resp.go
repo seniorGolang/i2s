@@ -116,7 +116,7 @@ func (b *Builder) makeComponent(fields []*node.Object, swagger *Swagger) (com sc
 				continue
 			}
 
-			com.Ref = fmt.Sprintf("#/components/schemas/%s", field.Alias)
+			com.Properties[field.Name] = schema{Ref: fmt.Sprintf("#/components/schemas/%s", field.Alias)}
 			continue
 		}
 

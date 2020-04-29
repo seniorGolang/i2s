@@ -33,6 +33,10 @@ func (p *NodeParser) Parse(servicesPath string, ifaceNames ...string) (node Node
 		node.Services = append(node.Services, p.services...)
 	}
 
+	for name := range p.types {
+		p.types[name].IsArray = false
+	}
+
 	node.Types = p.types
 	node.Name = node.Tags.Value("backend")
 	node.Events, _ = p.ParseEvents(path.Join(servicesPath, "events"))

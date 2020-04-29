@@ -80,13 +80,18 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 
 			if knownObject, found := p.types[f.TypeName]; !found {
 
-				obj, err = p.searchTypeInfo(pkgPath, f.TypeName, field)
+				if obj, err = p.searchTypeInfo(pkgPath, f.TypeName, field); err == nil {
+					obj.Tags = tags.ParseTags(field.Docs)
+				}
 
-				obj.Tags = tags.ParseTags(field.Docs)
+				if len(obj.Fields) > 0 {
+					p.types[obj.Type] = obj
+					obj = &Object{Name: field.Name, Type: field.Type.String(), Alias: obj.Type}
+				}
 				return
 
 			} else {
-				obj = &Object{Name: field.Name, Type: field.Type.String(), Tags: tags.ParseTags(field.Docs), Alias: knownObject.Type}
+				obj = &Object{Name: field.Name, Type: field.Type.String(), Alias: knownObject.Type}
 			}
 			return
 
@@ -101,6 +106,8 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 				return
 			}
 
+			p.types[obj.Type] = obj
+
 			return &Object{Alias: obj.Type}, err
 
 		case types.TImport:
@@ -111,6 +118,9 @@ func (p *NodeParser) makeType(pkgPath string, field types.Variable, fieldType ty
 			}
 			obj, err = p.searchTypeInfo(f.Import.Package, f.Next.String(), field)
 
+			if len(obj.Fields) > 0 {
+				p.types[obj.Type] = obj
+			}
 			return &Object{Name: field.Name, Alias: f.Next.String()}, err
 
 		case types.TArray:
